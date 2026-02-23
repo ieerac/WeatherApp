@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="cuacaXD - Aplikasi cuaca modern dengan prakiraan 5 hari, deteksi lokasi otomatis, dan tema otomatis.">
+    <title>cuacaXD — Cuaca Real-Time</title>
+
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ========== HEADER ========== -->
+    <header id="app-header">
+        <div class="header-inner">
+            <div class="logo">
+                <i class="fa-solid fa-cloud-sun-rain"></i>
+                <h1>cuacaXD</h1>
+            </div>
+            <form id="search-form" class="search-bar" autocomplete="off">
+                <div class="search-input-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="city-input" placeholder="Cari kota... (misal: Jakarta)"
+                        aria-label="Masukkan nama kota">
+                </div>
+                <button type="submit" id="search-btn" aria-label="Cari cuaca">
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <span>Cari</span>
+                </button>
+                <button type="button" id="open-picker-btn" class="picker-toggle-btn"
+                    aria-label="Pilih lokasi dari daftar">
+                    <i class="fa-solid fa-globe"></i>
+                    <span>Jelajahi</span>
+                </button>
+            </form>
+            <!-- Tombol Toggle Tema -->
+            <button type="button" id="theme-toggle-btn" class="theme-toggle-btn" aria-label="Ubah tema">
+                <div class="theme-toggle-track">
+                    <i class="fa-solid fa-sun theme-icon-sun"></i>
+                    <i class="fa-solid fa-moon theme-icon-moon"></i>
+                    <div class="theme-toggle-thumb"></div>
+                </div>
+                <span id="theme-label" class="theme-label">Auto</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main id="main-content">
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading-container">
+            <div class="spinner"></div>
+            <p>Mendeteksi lokasi & mengambil data cuaca...</p>
+        </div>
+
+        <!-- Error Message Area -->
+        <div id="error-container" class="error-container hidden">
+            <div class="error-card">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <p id="error-message">Terjadi kesalahan.</p>
+                <button id="error-retry-btn" class="retry-btn">
+                    <i class="fa-solid fa-rotate-right"></i> Coba Lagi
+                </button>
+            </div>
+        </div>
+
+        <!-- Geolocation Fallback: Manual Input -->
+        <div id="geo-fallback" class="geo-fallback hidden">
+            <div class="fallback-card">
+                <i class="fa-solid fa-location-crosshairs"></i>
+                <h2>Lokasi Tidak Terdeteksi</h2>
+                <p>Izin lokasi ditolak atau tidak didukung. Silakan masukkan nama kota secara manual.</p>
+                <form id="fallback-form" autocomplete="off">
+                    <input type="text" id="fallback-input" placeholder="Masukkan nama kota..."
+                        aria-label="Masukkan nama kota">
+                    <button type="submit"><i class="fa-solid fa-search"></i> Tampilkan Cuaca</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== Weather Content (hidden until data loads) ===== -->
+        <div id="weather-content" class="weather-content hidden">
+
+            <!-- Current Weather Section -->
+            <section id="current-weather" class="current-weather-section" aria-label="Cuaca saat ini">
+                <div class="current-card">
+                    <!-- Top: Location & Time -->
+                    <div class="current-top">
+                        <div class="location-info">
+                            <h2 id="location-name"><i class="fa-solid fa-location-dot"></i> <span>—</span></h2>
+                            <p id="local-time" class="local-time"><i class="fa-regular fa-clock"></i> <span>—</span></p>
+                        </div>
+                    </div>
+
+                    <!-- Middle: Temperature & Condition -->
+                    <div class="current-main">
+                        <div class="temp-display">
+                            <img id="current-icon" src="" alt="Weather Icon" class="current-icon" loading="lazy">
+                            <div class="temp-info">
+                                <span id="current-temp" class="big-temp">—°C</span>
+                                <span id="current-condition" class="condition-text">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom: Detail Grid -->
+                    <div class="current-details">
+                        <div class="detail-item" id="detail-humidity">
+                            <i class="fa-solid fa-droplet"></i>
+                            <div>
+                                <span class="detail-label">Kelembaban</span>
+                                <span class="detail-value" id="current-humidity">—%</span>
+                            </div>
+                        </div>
+                        <div class="detail-item" id="detail-wind">
+                            <i class="fa-solid fa-wind"></i>
+                            <div>
+                                <span class="detail-label">Angin</span>
+                                <span class="detail-value" id="current-wind">— km/jam</span>
+                            </div>
+                        </div>
+                        <div class="detail-item" id="detail-pressure">
+                            <i class="fa-solid fa-gauge-high"></i>
+                            <div>
+                                <span class="detail-label">Tekanan</span>
+                                <span class="detail-value" id="current-pressure">— mb</span>
+                            </div>
+                        </div>
+                        <div class="detail-item" id="detail-visibility">
+                            <i class="fa-solid fa-eye"></i>
+                            <div>
+                                <span class="detail-label">Visibilitas</span>
+                                <span class="detail-value" id="current-visibility">— km</span>
+                            </div>
+                        </div>
+                        <div class="detail-item" id="detail-uv">
+                            <i class="fa-solid fa-sun"></i>
+                            <div>
+                                <span class="detail-label">UV Index</span>
+                                <span class="detail-value" id="current-uv">—</span>
+                            </div>
+                        </div>
+                        <div class="detail-item" id="detail-rain">
+                            <i class="fa-solid fa-cloud-rain"></i>
+                            <div>
+                                <span class="detail-label">Peluang Hujan</span>
+                                <span class="detail-value" id="current-rain">—%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5-Day Forecast Section -->
+            <section id="forecast-section" class="forecast-section" aria-label="Prakiraan 5 hari">
+                <h2 class="section-title"><i class="fa-solid fa-calendar-days"></i> Prakiraan 5 Hari</h2>
+                <div id="forecast-grid" class="forecast-grid">
+                    <!-- Forecast cards will be injected here by JS -->
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ========== LOCATION PICKER MODAL ========== -->
+    <div id="location-modal" class="modal-overlay hidden">
+        <div class="modal-container">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-earth-americas"></i>
+                    <h2>Pilih Lokasi</h2>
+                </div>
+                <button id="close-modal-btn" class="modal-close" aria-label="Tutup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body: Cascading Dropdowns -->
+            <div class="modal-body">
+                <!-- Step 1: Benua -->
+                <div class="picker-step">
+                    <label for="select-continent">
+                        <i class="fa-solid fa-earth-asia"></i> Benua
+                    </label>
+                    <select id="select-continent">
+                        <option value="">— Pilih Benua —</option>
+                    </select>
+                </div>
+
+                <!-- Step 2: Negara -->
+                <div class="picker-step">
+                    <label for="select-country">
+                        <i class="fa-solid fa-flag"></i> Negara
+                    </label>
+                    <select id="select-country" disabled>
+                        <option value="">— Pilih Negara —</option>
+                    </select>
+                </div>
+
+                <!-- Step 3: Kota -->
+                <div class="picker-step">
+                    <label for="select-city">
+                        <i class="fa-solid fa-city"></i> Kota
+                    </label>
+                    <select id="select-city" disabled>
+                        <option value="">— Pilih Kota —</option>
+                    </select>
+                </div>
+
+                <!-- Step 4: Daerah -->
+                <div class="picker-step">
+                    <label for="select-area">
+                        <i class="fa-solid fa-map-pin"></i> Daerah
+                    </label>
+                    <select id="select-area" disabled>
+                        <option value="">— Pilih Daerah (opsional) —</option>
+                    </select>
+                </div>
+
+                <!-- Selected Preview -->
+                <div id="picker-preview" class="picker-preview hidden">
+                    <i class="fa-solid fa-location-dot"></i>
+                    <span id="picker-preview-text">—</span>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="modal-footer">
+                <button id="picker-cancel-btn" class="modal-btn modal-btn-secondary">
+                    <i class="fa-solid fa-xmark"></i> Batal
+                </button>
+                <button id="picker-submit-btn" class="modal-btn modal-btn-primary" disabled>
+                    <i class="fa-solid fa-cloud-sun"></i> Tampilkan Cuaca
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== FOOTER ========== -->
+    <footer id="app-footer">
+        <p>
+            <i class="fa-solid fa-bolt"></i> Dibuat oleh abdan dengan nama
+            <strong>cuacaXD</strong>
+            &nbsp;|&nbsp; Data oleh <a href="https://www.weatherapi.com/" target="_blank"
+                rel="noopener noreferrer">WeatherAPI.com</a>
+        </p>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="locations.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
