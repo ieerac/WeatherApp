@@ -44,6 +44,9 @@ const forecastGrid = document.getElementById('forecast-grid');
 // Variabel untuk menyimpan lokasi terakhir yang dicari (untuk retry)
 let lastSearchedLocation = null;
 
+// Interval ID untuk jam real-time lokasi
+let locationClockInterval = null;
+
 // ==================== NAMA HARI INDONESIA ====================
 const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
@@ -85,6 +88,29 @@ function getLocationHour() {
     }
     // Fallback: gunakan waktu komputer lokal
     return new Date().getHours();
+}
+
+/**
+ * Mendapatkan perkiraan waktu saat ini di LOKASI cuaca sebagai objek Date.
+ */
+function getLocationTime() {
+    if (locationTimeData) {
+        const elapsed = Date.now() - locationTimeData.fetchedAt;
+        const locTime = new Date(locationTimeData.localtimeStr.replace(' ', 'T'));
+        locTime.setTime(locTime.getTime() + elapsed);
+        return locTime;
+    }
+    return new Date();
+}
+
+/**
+ * Memperbarui tampilan jam real-time di elemen #local-time.
+ */
+function updateLocationClock() {
+    const now = getLocationTime();
+    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateStr = `${HARI[now.getDay()]}, ${now.getDate()} ${BULAN[now.getMonth()]} ${now.getFullYear()}`;
+    localTime.innerHTML = `<i class="fa-regular fa-clock"></i> <span>${dateStr} • ${timeStr}</span>`;
 }
 
 /**
@@ -271,11 +297,13 @@ function displayWeather(data) {
     // Lokasi
     locationName.innerHTML = `<i class="fa-solid fa-location-dot"></i> <span>${loc.name}, ${loc.country}</span>`;
 
-    // Waktu lokal
-    const lt = new Date(loc.localtime.replace(' ', 'T'));
-    const timeStr = lt.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
-    const dateStr = `${HARI[lt.getDay()]}, ${lt.getDate()} ${BULAN[lt.getMonth()]} ${lt.getFullYear()}`;
-    localTime.innerHTML = `<i class="fa-regular fa-clock"></i> <span>${dateStr} • ${timeStr}</span>`;
+    // Jam real-time lokasi — hentikan interval sebelumnya jika ada
+    if (locationClockInterval) {
+        clearInterval(locationClockInterval);
+    }
+    // Perbarui segera, lalu mulai interval setiap detik
+    updateLocationClock();
+    locationClockInterval = setInterval(updateLocationClock, 1000);
 
     // Ikon & suhu
     currentIcon.src = `https:${current.condition.icon}`;
